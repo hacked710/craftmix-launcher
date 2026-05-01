@@ -1,1 +1,1626 @@
 
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>CraftMix Launcher</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  :root {
+    --orange: #ff8c00;
+    --orange-light: #ffb347;
+    --yellow: #ffd700;
+    --gold: #ffaa00;
+    --bg-darkest: #0d0a05;
+    --bg-dark: #1a140a;
+    --bg-mid: #2a1f10;
+    --bg-card: rgba(42, 31, 16, 0.6);
+    --bg-card-hover: rgba(60, 45, 24, 0.8);
+    --border-orange: rgba(255, 140, 0, 0.3);
+    --border-orange-hover: rgba(255, 140, 0, 0.6);
+    --text-primary: #ffffff;
+    --text-secondary: #c9b896;
+    --text-tertiary: #7a6b54;
+    --shadow-orange: 0 4px 20px rgba(255, 140, 0, 0.3);
+    --shadow-orange-strong: 0 8px 40px rgba(255, 140, 0, 0.5);
+  }
+  
+  body {
+    font-family: 'Segoe UI', 'Trebuchet MS', sans-serif;
+    background: var(--bg-darkest);
+    color: var(--text-primary);
+    overflow: hidden;
+    user-select: none;
+    height: 100vh;
+    width: 100vw;
+    position: relative;
+  }
+  
+  .bg-gradient {
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse at top left, rgba(255, 140, 0, 0.15) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom right, rgba(255, 215, 0, 0.1) 0%, transparent 50%),
+      linear-gradient(180deg, #0d0a05 0%, #1a140a 100%);
+    z-index: 0;
+  }
+  
+  .particles {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  
+  .particle {
+    position: absolute;
+    background: var(--orange);
+    border-radius: 50%;
+    opacity: 0;
+    animation: float linear infinite;
+  }
+  
+  @keyframes float {
+    0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+    10% { opacity: 0.6; }
+    90% { opacity: 0.4; }
+    100% { transform: translateY(-100px) translateX(50px); opacity: 0; }
+  }
+  
+  .block {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, var(--orange) 0%, var(--gold) 100%);
+    opacity: 0.1;
+    animation: rotate-float 20s linear infinite;
+    border-radius: 2px;
+  }
+  
+  @keyframes rotate-float {
+    0% { transform: translateY(100vh) rotate(0deg); }
+    100% { transform: translateY(-100px) rotate(360deg); }
+  }
+  
+  .titlebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 32px;
+    background: rgba(13, 10, 5, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-app-region: drag;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 0 0 16px;
+    z-index: 1000;
+    border-bottom: 1px solid var(--border-orange);
+  }
+  
+  .titlebar-title {
+    font-size: 12px;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+    font-weight: 500;
+  }
+  
+  .titlebar-title span { color: var(--orange); font-weight: 600; }
+  
+  .titlebar-controls {
+    display: flex;
+    -webkit-app-region: no-drag;
+  }
+  
+  .tb-btn {
+    width: 46px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+  
+  .tb-btn:hover { background: rgba(255, 140, 0, 0.1); color: var(--orange); }
+  .tb-btn.close:hover { background: #c92a2a; color: #fff; }
+  
+  .app {
+    position: relative;
+    z-index: 10;
+    height: 100vh;
+    padding-top: 32px;
+    display: flex;
+  }
+  
+  .sidebar {
+    width: 80px;
+    background: rgba(13, 10, 5, 0.7);
+    backdrop-filter: blur(20px);
+    border-right: 1px solid var(--border-orange);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 0;
+    gap: 8px;
+    z-index: 100;
+  }
+  
+  .sidebar-logo {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--orange) 0%, var(--gold) 100%);
+    border-radius: 12px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 11px;
+    color: #fff;
+    box-shadow: var(--shadow-orange);
+    cursor: pointer;
+    transition: transform 0.2s;
+    text-align: center;
+    line-height: 1.1;
+    letter-spacing: 0.5px;
+  }
+  
+  .sidebar-logo:hover { transform: scale(1.05) rotate(-5deg); }
+  
+  .nav-divider {
+    width: 30px;
+    height: 1px;
+    background: var(--border-orange);
+    margin: 8px 0;
+  }
+  
+  .nav-item {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    cursor: pointer;
+    color: var(--text-tertiary);
+    transition: all 0.2s;
+    background: transparent;
+    border: 1px solid transparent;
+    position: relative;
+  }
+  
+  .nav-item:hover {
+    color: var(--orange);
+    background: rgba(255, 140, 0, 0.08);
+  }
+  
+  .nav-item.active {
+    color: var(--orange);
+    background: rgba(255, 140, 0, 0.15);
+    border-color: var(--border-orange);
+    box-shadow: 0 0 0 1px var(--border-orange);
+  }
+  
+  .nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 24px;
+    background: var(--orange);
+    border-radius: 0 2px 2px 0;
+    box-shadow: 0 0 8px var(--orange);
+  }
+  
+  .nav-icon { width: 22px; height: 22px; }
+  .nav-label { font-size: 9px; font-weight: 500; letter-spacing: 0.5px; }
+  
+  .sidebar-bottom { margin-top: auto; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  
+  .content {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .page {
+    position: absolute;
+    inset: 0;
+    padding: 32px;
+    overflow-y: auto;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(20px);
+    transition: opacity 0.3s, transform 0.3s;
+  }
+  
+  .page.active {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateX(0);
+  }
+  
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  
+  .page-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 1px;
+  }
+  
+  .page-title span { color: var(--orange); }
+  
+  .page-subtitle {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin-top: 4px;
+    letter-spacing: 0.5px;
+  }
+  
+  .login-container {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 40px;
+  }
+  
+  .login-logo {
+    width: 140px;
+    height: 140px;
+    background: linear-gradient(135deg, var(--orange) 0%, var(--gold) 100%);
+    border-radius: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-orange-strong);
+    margin-bottom: 24px;
+    animation: pulse 3s ease-in-out infinite;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-align: center;
+    line-height: 1;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); box-shadow: var(--shadow-orange-strong); }
+    50% { transform: scale(1.03); box-shadow: 0 12px 60px rgba(255, 140, 0, 0.7); }
+  }
+  
+  .login-title {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    background: linear-gradient(135deg, var(--orange) 0%, var(--yellow) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+  
+  .login-tagline {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-bottom: 40px;
+    letter-spacing: 1px;
+  }
+  
+  .login-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 380px;
+  }
+  
+  .login-btn {
+    background: var(--bg-card);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-orange);
+    color: var(--text-primary);
+    padding: 16px 24px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.2s;
+    text-align: left;
+  }
+  
+  .login-btn:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-orange-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-orange);
+  }
+  
+  .login-btn-icon {
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 140, 0, 0.15);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  
+  .login-btn-text { flex: 1; }
+  .login-btn-title { font-size: 14px; font-weight: 600; }
+  .login-btn-desc { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+  
+  .cracked-input {
+    background: var(--bg-card);
+    border: 1px solid var(--border-orange);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 16px;
+    display: none;
+  }
+  
+  .cracked-input.show { display: block; animation: slideDown 0.3s; }
+  
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .input-group { display: flex; flex-direction: column; gap: 8px; }
+  
+  .input-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  
+  .text-input {
+    background: rgba(13, 10, 5, 0.6);
+    border: 1px solid rgba(255, 140, 0, 0.2);
+    color: var(--text-primary);
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+  }
+  
+  .text-input:focus { border-color: var(--orange); }
+  .text-input::placeholder { color: var(--text-tertiary); }
+  
+  .login-confirm-btn {
+    background: linear-gradient(135deg, var(--orange) 0%, var(--gold) 100%);
+    color: #1a140a;
+    border: none;
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 12px;
+    letter-spacing: 1px;
+    transition: transform 0.1s, box-shadow 0.2s;
+  }
+  
+  .login-confirm-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-orange); }
+  .login-confirm-btn:active { transform: translateY(0); }
+  
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 24px;
+    height: calc(100% - 80px);
+  }
+  
+  .main-panel { display: flex; flex-direction: column; gap: 20px; min-height: 0; }
+  .side-panel { display: flex; flex-direction: column; gap: 20px; min-height: 0; }
+  
+  .server-card {
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-orange);
+    border-radius: 20px;
+    padding: 32px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+    min-height: 280px;
+  }
+  
+  .server-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(255, 140, 0, 0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  
+  .server-info { position: relative; z-index: 2; }
+  
+  .server-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 12px;
+  }
+  
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    background: #4ade80;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #4ade80;
+    animation: blink 2s infinite;
+  }
+  
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  
+  .server-name {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+  
+  .server-name span {
+    background: linear-gradient(135deg, var(--orange) 0%, var(--yellow) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .server-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+    max-width: 520px;
+    line-height: 1.6;
+  }
+  
+  .server-stats {
+    display: flex;
+    gap: 32px;
+    margin-bottom: 24px;
+  }
+  
+  .stat-item { display: flex; flex-direction: column; }
+  .stat-value { font-size: 24px; font-weight: 700; color: var(--orange); }
+  .stat-label { font-size: 11px; color: var(--text-tertiary); letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+  
+  .play-section {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: relative;
+    z-index: 2;
+  }
+  
+  .play-btn {
+    background: linear-gradient(135deg, var(--orange) 0%, var(--gold) 50%, var(--yellow) 100%);
+    color: #1a140a;
+    border: none;
+    padding: 18px 48px;
+    border-radius: 14px;
+    font-size: 18px;
+    font-weight: 800;
+    cursor: pointer;
+    letter-spacing: 3px;
+    box-shadow: var(--shadow-orange-strong);
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .play-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: left 0.5s;
+  }
+  
+  .play-btn:hover::before { left: 100%; }
+  .play-btn:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 12px 50px rgba(255, 215, 0, 0.6); }
+  .play-btn:active { transform: translateY(0); }
+  .play-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  
+  .play-meta { display: flex; flex-direction: column; gap: 2px; }
+  .play-meta-version { font-size: 12px; color: var(--text-tertiary); letter-spacing: 1px; }
+  .play-meta-ip { font-size: 13px; color: var(--text-secondary); font-family: monospace; }
+  
+  .console {
+    background: rgba(13, 10, 5, 0.8);
+    border: 1px solid var(--border-orange);
+    border-radius: 12px;
+    padding: 16px;
+    font-family: 'Consolas', monospace;
+    font-size: 11px;
+    color: #ffb347;
+    height: 140px;
+    overflow-y: auto;
+    line-height: 1.5;
+  }
+  
+  .console::-webkit-scrollbar { width: 6px; }
+  .console::-webkit-scrollbar-track { background: transparent; }
+  .console::-webkit-scrollbar-thumb { background: var(--border-orange); border-radius: 3px; }
+  
+  .console-line { margin-bottom: 4px; }
+  .console-time { color: var(--text-tertiary); margin-right: 8px; }
+  .console-info { color: #6cf; }
+  .console-success { color: #4ade80; }
+  .console-error { color: #ef4444; }
+  
+  .progress-container {
+    background: rgba(13, 10, 5, 0.6);
+    border: 1px solid var(--border-orange);
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  
+  .progress-text { font-size: 12px; color: var(--text-secondary); min-width: 100px; }
+  
+  .progress-bar {
+    flex: 1;
+    height: 8px;
+    background: rgba(13, 10, 5, 0.8);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--orange) 0%, var(--yellow) 100%);
+    width: 0%;
+    transition: width 0.3s;
+    box-shadow: 0 0 10px var(--orange);
+  }
+  
+  .progress-percent { font-size: 12px; color: var(--orange); font-weight: 600; min-width: 40px; text-align: right; }
+  
+  .info-card {
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-orange);
+    border-radius: 16px;
+    padding: 20px;
+  }
+  
+  .info-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  
+  .info-card-title {
+    font-size: 12px;
+    color: var(--orange);
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  
+  .account-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: rgba(13, 10, 5, 0.4);
+    border-radius: 10px;
+  }
+  
+  .avatar {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--orange) 0%, var(--gold) 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+    color: #1a140a;
+    flex-shrink: 0;
+  }
+  
+  .account-info { flex: 1; min-width: 0; }
+  .account-name { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .account-type { font-size: 10px; color: var(--text-tertiary); margin-top: 2px; letter-spacing: 0.5px; }
+  
+  .contest-banner {
+    background: linear-gradient(135deg, var(--orange) 0%, var(--gold) 100%);
+    border-radius: 16px;
+    padding: 20px;
+    color: #1a140a;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  
+  .contest-banner:hover { transform: translateY(-2px); box-shadow: var(--shadow-orange-strong); }
+  
+  .contest-banner::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -20%;
+    width: 200px;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  
+  .contest-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    opacity: 0.7;
+    margin-bottom: 4px;
+  }
+  
+  .contest-title {
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 4px;
+    position: relative;
+    z-index: 2;
+  }
+  
+  .contest-prize {
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+  
+  .contest-desc {
+    font-size: 11px;
+    opacity: 0.8;
+    line-height: 1.4;
+  }
+  
+  .social-links {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  
+  .social-link {
+    background: rgba(13, 10, 5, 0.4);
+    border: 1px solid rgba(255, 140, 0, 0.15);
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  .social-link:hover {
+    background: rgba(255, 140, 0, 0.1);
+    border-color: var(--border-orange);
+    color: var(--orange);
+  }
+  
+  .accounts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  
+  .account-card {
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-orange);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.2s;
+  }
+  
+  .account-card.selected {
+    border-color: var(--orange);
+    box-shadow: 0 0 0 2px rgba(255, 140, 0, 0.2);
+  }
+  
+  .account-card-info { flex: 1; }
+  .account-card-name { font-size: 16px; font-weight: 600; }
+  .account-card-meta { font-size: 11px; color: var(--text-tertiary); margin-top: 4px; letter-spacing: 0.5px; }
+  
+  .account-card-actions { display: flex; gap: 8px; }
+  
+  .icon-btn {
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 140, 0, 0.1);
+    border: 1px solid var(--border-orange);
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--orange);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  
+  .icon-btn:hover { background: var(--orange); color: #1a140a; }
+  .icon-btn.danger:hover { background: #ef4444; border-color: #ef4444; color: #fff; }
+  
+  .add-account-btn {
+    background: var(--bg-card);
+    border: 2px dashed var(--border-orange);
+    border-radius: 12px;
+    padding: 24px;
+    color: var(--orange);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    width: 100%;
+    letter-spacing: 0.5px;
+  }
+  
+  .add-account-btn:hover { background: rgba(255, 140, 0, 0.1); border-style: solid; }
+  
+  .settings-section {
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border-orange);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  
+  .settings-section-title {
+    font-size: 14px;
+    color: var(--orange);
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 140, 0, 0.1);
+  }
+  
+  .setting-row:last-child { border-bottom: none; }
+  
+  .setting-label-group { flex: 1; }
+  .setting-label { font-size: 14px; font-weight: 500; }
+  .setting-desc { font-size: 11px; color: var(--text-tertiary); margin-top: 4px; }
+  
+  .setting-control { display: flex; align-items: center; gap: 12px; min-width: 200px; justify-content: flex-end; }
+  
+  .slider-wrapper { display: flex; align-items: center; gap: 12px; flex: 1; }
+  
+  .slider {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 6px;
+    background: rgba(13, 10, 5, 0.6);
+    border-radius: 3px;
+    outline: none;
+  }
+  
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    background: linear-gradient(135deg, var(--orange) 0%, var(--gold) 100%);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(255, 140, 0, 0.5);
+  }
+  
+  .slider-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--orange);
+    min-width: 50px;
+    text-align: right;
+  }
+  
+  .toggle {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: rgba(13, 10, 5, 0.8);
+    border: 1px solid var(--border-orange);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  
+  .toggle.on { background: var(--orange); border-color: var(--orange); }
+  
+  .toggle-knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    background: #fff;
+    border-radius: 50%;
+    transition: left 0.2s;
+  }
+  
+  .toggle.on .toggle-knob { left: 22px; }
+  
+  .select-input {
+    background: rgba(13, 10, 5, 0.6);
+    border: 1px solid var(--border-orange);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+    font-family: inherit;
+    min-width: 140px;
+  }
+  
+  .primary-btn {
+    background: linear-gradient(135deg, var(--orange) 0%, var(--gold) 100%);
+    color: #1a140a;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+  }
+  
+  .primary-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-orange); }
+  
+  .secondary-btn {
+    background: transparent;
+    color: var(--orange);
+    border: 1px solid var(--border-orange);
+    padding: 9px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .secondary-btn:hover { background: rgba(255, 140, 0, 0.1); border-color: var(--orange); }
+  
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255, 140, 0, 0.2); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255, 140, 0, 0.4); }
+  
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="bg-gradient"></div>
+<div class="particles" id="particles"></div>
+
+<div class="titlebar">
+  <div class="titlebar-title">CRAFTMIX <span>LAUNCHER</span></div>
+  <div class="titlebar-controls">
+    <button class="tb-btn" id="tb-min">─</button>
+    <button class="tb-btn close" id="tb-close">✕</button>
+  </div>
+</div>
+
+<div class="app">
+
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-logo">CRAFT<br>MIX</div>
+    <div class="nav-divider"></div>
+    
+    <div class="nav-item active" data-page="dashboard">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12L12 4l9 8M5 10v10h14V10"/></svg>
+      <div class="nav-label">ANA</div>
+    </div>
+    
+    <div class="nav-item" data-page="accounts">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>
+      <div class="nav-label">HESAP</div>
+    </div>
+    
+    <div class="nav-item" data-page="settings">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.5-2.4 1a7 7 0 0 0-1.7-1L14.5 3h-5l-.3 2.6a7 7 0 0 0-1.7 1l-2.4-1-2 3.5L5 10.6a7 7 0 0 0 0 2.8l-2 1.5 2 3.5 2.4-1a7 7 0 0 0 1.7 1l.3 2.6h5l.3-2.6a7 7 0 0 0 1.7-1l2.4 1 2-3.5-2-1.5a7 7 0 0 0 .1-1z"/></svg>
+      <div class="nav-label">AYAR</div>
+    </div>
+    
+    <div class="sidebar-bottom">
+      <div class="nav-item" id="logout-btn" title="Çıkış">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        <div class="nav-label">ÇIKIŞ</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <div class="page" id="page-login">
+      <div class="login-container">
+        <div class="login-logo">CRAFT<br>MIX</div>
+        <div class="login-title">CRAFTMIX</div>
+        <div class="login-tagline">Türkiye'nin yeni Skyblock sunucusu</div>
+        
+        <div class="login-options">
+          <button class="login-btn" id="login-microsoft">
+            <div class="login-btn-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" fill="#f35325"/><rect x="13" y="3" width="8" height="8" fill="#81bc06"/><rect x="3" y="13" width="8" height="8" fill="#05a6f0"/><rect x="13" y="13" width="8" height="8" fill="#ffba08"/></svg>
+            </div>
+            <div class="login-btn-text">
+              <div class="login-btn-title">Microsoft Hesabı</div>
+              <div class="login-btn-desc">Premium Minecraft hesabı ile giriş</div>
+            </div>
+          </button>
+          
+          <button class="login-btn" id="login-cracked">
+            <div class="login-btn-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff8c00" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg>
+            </div>
+            <div class="login-btn-text">
+              <div class="login-btn-title">Kullanıcı Adı ile Giriş</div>
+              <div class="login-btn-desc">Sadece bir kullanıcı adı yeterli</div>
+            </div>
+          </button>
+          
+          <div class="cracked-input" id="cracked-form">
+            <div class="input-group">
+              <label class="input-label">Kullanıcı Adı</label>
+              <input type="text" class="text-input" id="cracked-username" placeholder="Örn: Arestabey" maxlength="16">
+              <button class="login-confirm-btn" id="cracked-confirm">GİRİŞ YAP</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Hoş Geldin, <span id="welcome-name">Oyuncu</span></div>
+          <div class="page-subtitle">Ada savaşlarına hazır mısın?</div>
+        </div>
+      </div>
+      
+      <div class="dashboard-grid">
+        
+        <div class="main-panel">
+          
+          <div class="server-card">
+            <div class="server-info">
+              <div class="server-status">
+                <span class="status-dot"></span>
+                ONLİNE
+              </div>
+              <div class="server-name"><span>CraftMix</span> Skyblock</div>
+              <div class="server-desc">
+                Kendi adanı kur, kaynaklarını topla, mağazada eşsiz ürünler keşfet ve oyuncuları yenerek ada savaşlarının şampiyonu ol.
+              </div>
+              
+              <div class="server-stats">
+                <div class="stat-item">
+                  <div class="stat-value" id="player-count">--</div>
+                  <div class="stat-label">Oyuncu</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-value" id="ping-value">--</div>
+                  <div class="stat-label">Ping (ms)</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-value">1.21.8</div>
+                  <div class="stat-label">Sürüm</div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="play-section">
+              <button class="play-btn" id="play-btn">OYNA</button>
+              <div class="play-meta">
+                <div class="play-meta-version">VANILLA 1.21.8</div>
+                <div class="play-meta-ip">play.craftmix.net</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="progress-container hidden" id="progress-container">
+            <div class="progress-text" id="progress-text">Hazırlanıyor...</div>
+            <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+            <div class="progress-percent" id="progress-percent">0%</div>
+          </div>
+          
+          <div class="console" id="console">
+            <div class="console-line"><span class="console-time">[--:--:--]</span><span class="console-info">Launcher hazır.</span></div>
+          </div>
+        </div>
+        
+        <div class="side-panel">
+          
+          <div class="info-card">
+            <div class="info-card-header">
+              <div class="info-card-title">AKTİF HESAP</div>
+            </div>
+            <div class="account-display">
+              <div class="avatar" id="avatar-letter">?</div>
+              <div class="account-info">
+                <div class="account-name" id="account-name">Hesap yok</div>
+                <div class="account-type" id="account-type">Giriş yapın</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="contest-banner" id="contest-banner">
+            <div class="contest-label">YARIŞMA</div>
+            <div class="contest-title">İlk 5 Oyuncu</div>
+            <div class="contest-prize">10.000 ₺</div>
+            <div class="contest-desc">En çok playtime'a sahip 5 oyuncu para ödülü kazanır. 1 hafta sürecek.</div>
+          </div>
+          
+          <div class="info-card">
+            <div class="info-card-header">
+              <div class="info-card-title">SOSYAL</div>
+            </div>
+            <div class="social-links">
+              <div class="social-link" data-link="discord">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09c-.01-.02-.04-.03-.07-.03c-1.5.26-2.93.71-4.27 1.33c-.01 0-.02.01-.03.02c-2.72 4.07-3.47 8.03-3.1 11.95c0 .02.01.04.03.05c1.8 1.32 3.53 2.12 5.24 2.65c.03.01.06 0 .07-.02c.4-.55.76-1.13 1.07-1.74c.02-.04 0-.08-.04-.09c-.57-.22-1.11-.48-1.64-.78c-.04-.02-.04-.08-.01-.11c.11-.08.22-.17.33-.25c.02-.02.05-.02.07-.01c3.44 1.57 7.15 1.57 10.55 0c.02-.01.05-.01.07.01c.11.09.22.17.33.26c.04.03.04.09-.01.11c-.52.31-1.07.56-1.64.78c-.04.01-.05.06-.04.09c.32.61.68 1.19 1.07 1.74c.03.01.06.02.09.01c1.72-.53 3.45-1.33 5.25-2.65c.02-.01.03-.03.03-.05c.44-4.53-.73-8.46-3.1-11.95c-.01-.01-.02-.02-.04-.02M8.52 14.91c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.84 2.12-1.89 2.12m6.97 0c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.83 2.12-1.89 2.12"/></svg>
+                Discord
+              </div>
+              <div class="social-link" data-link="twitter">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                Twitter
+              </div>
+              <div class="social-link" data-link="website">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                craftmix.net
+              </div>
+              <div class="social-link" data-link="store">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></svg>
+                Mağaza
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-accounts">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Hesaplar</div>
+          <div class="page-subtitle">Birden fazla hesap kullanabilirsin</div>
+        </div>
+      </div>
+      
+      <div class="accounts-list" id="accounts-list"></div>
+      
+      <button class="add-account-btn" id="add-account-btn">+ YENİ HESAP EKLE</button>
+    </div>
+
+    <div class="page" id="page-settings">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Ayarlar</div>
+          <div class="page-subtitle">Launcher tercihlerini yönet</div>
+        </div>
+      </div>
+      
+      <div class="settings-section">
+        <div class="settings-section-title">OYUN AYARLARI</div>
+        
+        <div class="setting-row">
+          <div class="setting-label-group">
+            <div class="setting-label">RAM Tahsisi</div>
+            <div class="setting-desc">Minecraft için kullanılacak bellek miktarı</div>
+          </div>
+          <div class="setting-control">
+            <div class="slider-wrapper" style="width: 200px;">
+              <input type="range" class="slider" id="ram-slider" min="2" max="16" value="4" step="1">
+              <div class="slider-value" id="ram-value">4 GB</div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="setting-row">
+          <div class="setting-label-group">
+            <div class="setting-label">Tam Ekran</div>
+            <div class="setting-desc">Oyun başladığında tam ekran açılsın</div>
+          </div>
+          <div class="setting-control">
+            <div class="toggle" id="toggle-fullscreen"><div class="toggle-knob"></div></div>
+          </div>
+        </div>
+        
+        <div class="setting-row">
+          <div class="setting-label-group">
+            <div class="setting-label">Otomatik Bağlan</div>
+            <div class="setting-desc">Oyun açılınca otomatik sunucuya gir</div>
+          </div>
+          <div class="setting-control">
+            <div class="toggle on" id="toggle-autoconnect"><div class="toggle-knob"></div></div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="settings-section">
+        <div class="settings-section-title">JAVA AYARLARI</div>
+        
+        <div class="setting-row">
+          <div class="setting-label-group">
+            <div class="setting-label">Java Yolu</div>
+            <div class="setting-desc">Otomatik veya elle Java yolu belirleyin</div>
+          </div>
+          <div class="setting-control">
+            <select class="select-input" id="java-mode">
+              <option value="auto">Otomatik (Önerilen)</option>
+              <option value="manual">Elle Seç</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <div class="settings-section">
+        <div class="settings-section-title">LAUNCHER AYARLARI</div>
+        
+        <div class="setting-row">
+          <div class="setting-label-group">
+            <div class="setting-label">Oyun Açılınca Launcher'ı Kapat</div>
+            <div class="setting-desc">Bellek tasarrufu için</div>
+          </div>
+          <div class="setting-control">
+            <div class="toggle" id="toggle-closelauncher"><div class="toggle-knob"></div></div>
+          </div>
+        </div>
+        
+        <div class="setting-row">
+          <div class="setting-label-group">
+            <div class="setting-label">Hakkında</div>
+            <div class="setting-desc">CraftMix Launcher v1.0.0</div>
+          </div>
+          <div class="setting-control">
+            <button class="secondary-btn">GÜNCELLEME KONTROL ET</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function initParticles() {
+  const container = document.getElementById('particles');
+  for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = Math.random() * 4 + 2;
+    p.style.width = size + 'px';
+    p.style.height = size + 'px';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDuration = (Math.random() * 15 + 10) + 's';
+    p.style.animationDelay = Math.random() * 10 + 's';
+    container.appendChild(p);
+  }
+  for (let i = 0; i < 8; i++) {
+    const b = document.createElement('div');
+    b.className = 'block';
+    b.style.left = Math.random() * 100 + '%';
+    b.style.animationDuration = (Math.random() * 25 + 20) + 's';
+    b.style.animationDelay = Math.random() * 15 + 's';
+    container.appendChild(b);
+  }
+}
+initParticles();
+
+const state = {
+  currentPage: 'login',
+  accounts: [],
+  activeAccount: null,
+  settings: {
+    ram: 4,
+    fullscreen: false,
+    autoconnect: true,
+    closeLauncher: false,
+    javaMode: 'auto'
+  }
+};
+
+try {
+  const saved = localStorage.getItem('craftmix_state');
+  if (saved) {
+    const s = JSON.parse(saved);
+    Object.assign(state.accounts, s.accounts || []);
+    state.activeAccount = s.activeAccount || null;
+    Object.assign(state.settings, s.settings || {});
+  }
+} catch(e) {}
+
+function save() {
+  try {
+    localStorage.setItem('craftmix_state', JSON.stringify({
+      accounts: state.accounts,
+      activeAccount: state.activeAccount,
+      settings: state.settings
+    }));
+  } catch(e) {}
+}
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const page = document.getElementById('page-' + name);
+  if (page) page.classList.add('active');
+  
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const navItem = document.querySelector('.nav-item[data-page="' + name + '"]');
+  if (navItem) navItem.classList.add('active');
+  
+  state.currentPage = name;
+  
+  const sidebar = document.getElementById('sidebar');
+  sidebar.style.display = (name === 'login') ? 'none' : 'flex';
+  
+  if (name === 'accounts') renderAccounts();
+}
+
+document.querySelectorAll('.nav-item[data-page]').forEach(item => {
+  item.addEventListener('click', () => showPage(item.dataset.page));
+});
+
+document.getElementById('login-microsoft').addEventListener('click', () => {
+  log('Microsoft girişi henüz aktif değil. Yakında!', 'error');
+});
+
+document.getElementById('login-cracked').addEventListener('click', () => {
+  document.getElementById('cracked-form').classList.toggle('show');
+});
+
+document.getElementById('cracked-confirm').addEventListener('click', () => {
+  const username = document.getElementById('cracked-username').value.trim();
+  if (!username) { alert('Lütfen kullanıcı adı gir'); return; }
+  if (!/^[a-zA-Z0-9_]{3,16}$/.test(username)) {
+    alert('Geçersiz: 3-16 karakter, sadece harf/rakam/_');
+    return;
+  }
+  
+  const account = {
+    id: 'crack_' + Date.now(),
+    type: 'cracked',
+    name: username,
+    addedAt: Date.now()
+  };
+  
+  state.accounts.push(account);
+  state.activeAccount = account.id;
+  save();
+  
+  updateActiveAccountUI();
+  showPage('dashboard');
+  log('Hoş geldin ' + username + '!', 'success');
+});
+
+function updateActiveAccountUI() {
+  const acc = state.accounts.find(a => a.id === state.activeAccount);
+  const nameEl = document.getElementById('account-name');
+  const typeEl = document.getElementById('account-type');
+  const avatarEl = document.getElementById('avatar-letter');
+  const welcomeEl = document.getElementById('welcome-name');
+  
+  if (acc) {
+    nameEl.textContent = acc.name;
+    typeEl.textContent = acc.type === 'cracked' ? 'Kullanıcı Adı' : 'Microsoft';
+    avatarEl.textContent = acc.name[0].toUpperCase();
+    welcomeEl.textContent = acc.name;
+  } else {
+    nameEl.textContent = 'Hesap yok';
+    typeEl.textContent = 'Giriş yapın';
+    avatarEl.textContent = '?';
+    welcomeEl.textContent = 'Oyuncu';
+  }
+}
+
+function renderAccounts() {
+  const list = document.getElementById('accounts-list');
+  list.innerHTML = '';
+  
+  if (state.accounts.length === 0) {
+    list.innerHTML = '<div style="text-align:center; color:var(--text-tertiary); padding:40px;">Henüz hesap eklenmemiş</div>';
+    return;
+  }
+  
+  state.accounts.forEach(acc => {
+    const card = document.createElement('div');
+    card.className = 'account-card' + (acc.id === state.activeAccount ? ' selected' : '');
+    card.innerHTML = '<div class="avatar">' + acc.name[0].toUpperCase() + '</div>' +
+      '<div class="account-card-info">' +
+        '<div class="account-card-name">' + acc.name + '</div>' +
+        '<div class="account-card-meta">' + (acc.type === 'cracked' ? 'KULLANICI ADI' : 'MICROSOFT') + ' • Eklenme: ' + new Date(acc.addedAt).toLocaleDateString('tr-TR') + '</div>' +
+      '</div>' +
+      '<div class="account-card-actions">' +
+        '<button class="icon-btn" data-action="select" data-id="' + acc.id + '" title="Seç"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></button>' +
+        '<button class="icon-btn danger" data-action="delete" data-id="' + acc.id + '" title="Sil"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>' +
+      '</div>';
+    list.appendChild(card);
+  });
+  
+  list.querySelectorAll('[data-action]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      if (btn.dataset.action === 'select') {
+        state.activeAccount = id;
+        save();
+        updateActiveAccountUI();
+        renderAccounts();
+        log('Hesap değiştirildi', 'info');
+      } else if (btn.dataset.action === 'delete') {
+        if (confirm('Bu hesabı silmek istediğine emin misin?')) {
+          state.accounts = state.accounts.filter(a => a.id !== id);
+          if (state.activeAccount === id) state.activeAccount = state.accounts[0] ? state.accounts[0].id : null;
+          save();
+          updateActiveAccountUI();
+          renderAccounts();
+        }
+      }
+    });
+  });
+}
+
+document.getElementById('add-account-btn').addEventListener('click', () => {
+  showPage('login');
+});
+
+const ramSlider = document.getElementById('ram-slider');
+const ramValue = document.getElementById('ram-value');
+ramSlider.value = state.settings.ram;
+ramValue.textContent = state.settings.ram + ' GB';
+ramSlider.addEventListener('input', () => {
+  state.settings.ram = parseInt(ramSlider.value);
+  ramValue.textContent = state.settings.ram + ' GB';
+  save();
+});
+
+function setupToggle(id, key) {
+  const t = document.getElementById(id);
+  if (state.settings[key]) t.classList.add('on');
+  t.addEventListener('click', () => {
+    state.settings[key] = !state.settings[key];
+    t.classList.toggle('on');
+    save();
+  });
+}
+setupToggle('toggle-fullscreen', 'fullscreen');
+setupToggle('toggle-autoconnect', 'autoconnect');
+setupToggle('toggle-closelauncher', 'closeLauncher');
+
+document.getElementById('java-mode').value = state.settings.javaMode;
+document.getElementById('java-mode').addEventListener('change', (e) => {
+  state.settings.javaMode = e.target.value;
+  save();
+});
+
+function log(msg, type) {
+  type = type || 'info';
+  const c = document.getElementById('console');
+  const time = new Date().toLocaleTimeString('tr-TR');
+  const line = document.createElement('div');
+  line.className = 'console-line';
+  line.innerHTML = '<span class="console-time">[' + time + ']</span><span class="console-' + type + '">' + msg + '</span>';
+  c.appendChild(line);
+  c.scrollTop = c.scrollHeight;
+  while (c.children.length > 100) c.removeChild(c.firstChild);
+}
+
+function showProgress(text, percent) {
+  document.getElementById('progress-container').classList.remove('hidden');
+  document.getElementById('progress-text').textContent = text;
+  document.getElementById('progress-fill').style.width = percent + '%';
+  document.getElementById('progress-percent').textContent = Math.round(percent) + '%';
+}
+
+function hideProgress() {
+  document.getElementById('progress-container').classList.add('hidden');
+}
+
+const playBtn = document.getElementById('play-btn');
+playBtn.addEventListener('click', async () => {
+  if (!state.activeAccount) {
+    log('Lütfen önce giriş yap', 'error');
+    showPage('login');
+    return;
+  }
+  
+  const acc = state.accounts.find(a => a.id === state.activeAccount);
+  
+  playBtn.disabled = true;
+  playBtn.textContent = 'BAŞLATILIYOR...';
+  log('Oyun başlatılıyor: ' + acc.name + ' (RAM: ' + state.settings.ram + 'GB)', 'info');
+  showProgress('Hazırlanıyor...', 5);
+  
+  try {
+    if (window.craftmix) {
+      await window.craftmix.launchMinecraft({
+        username: acc.name,
+        ram: state.settings.ram,
+        autoconnect: state.settings.autoconnect,
+        fullscreen: state.settings.fullscreen
+      });
+    } else {
+      log('TEST MODU: Electron API yok', 'error');
+      setTimeout(() => {
+        playBtn.disabled = false;
+        playBtn.textContent = 'OYNA';
+        hideProgress();
+      }, 2000);
+    }
+  } catch (e) {
+    log('Hata: ' + e.message, 'error');
+    playBtn.disabled = false;
+    playBtn.textContent = 'OYNA';
+    hideProgress();
+  }
+});
+
+if (window.craftmix) {
+  window.craftmix.onLog((data) => {
+    if (data.msg && data.msg.length < 200) {
+      log(data.msg, 'info');
+    }
+  });
+  
+  window.craftmix.onProgress((p) => {
+    if (p && p.task !== undefined && p.total) {
+      const pct = (p.task / p.total) * 100;
+      showProgress(p.type || 'İndiriliyor...', pct);
+    }
+  });
+  
+  window.craftmix.onClosed((code) => {
+    log('Oyun kapandı (kod: ' + code + ')', 'info');
+    playBtn.disabled = false;
+    playBtn.textContent = 'OYNA';
+    hideProgress();
+  });
+}
+
+document.querySelectorAll('.social-link').forEach(l => {
+  l.addEventListener('click', () => {
+    const link = l.dataset.link;
+    const urls = {
+      discord: 'https://discord.gg/craftmix',
+      twitter: 'https://twitter.com/craftmixnet',
+      website: 'https://craftmix.net',
+      store: 'https://craftmix.net/magaza'
+    };
+    if (window.craftmix && window.craftmix.openExternal) {
+      window.craftmix.openExternal(urls[link]);
+    } else {
+      log('Link: ' + urls[link], 'info');
+    }
+  });
+});
+
+document.getElementById('contest-banner').addEventListener('click', () => {
+  if (window.craftmix && window.craftmix.openExternal) {
+    window.craftmix.openExternal('https://craftmix.net/yarisma');
+  } else {
+    log('Yarışma sayfası: craftmix.net/yarisma', 'info');
+  }
+});
+
+document.getElementById('logout-btn').addEventListener('click', () => {
+  if (confirm('Çıkış yapmak istediğine emin misin?')) {
+    state.activeAccount = null;
+    save();
+    updateActiveAccountUI();
+    showPage('login');
+  }
+});
+
+document.getElementById('tb-min').addEventListener('click', () => {
+  if (window.craftmix && window.craftmix.minimize) window.craftmix.minimize();
+});
+document.getElementById('tb-close').addEventListener('click', () => {
+  if (window.craftmix && window.craftmix.close) window.craftmix.close();
+  else window.close();
+});
+
+async function updateServerStatus() {
+  try {
+    const res = await fetch('https://api.mcsrvstat.us/3/play.craftmix.net');
+    const data = await res.json();
+    if (data.online) {
+      document.getElementById('player-count').textContent = (data.players && data.players.online) || '0';
+      document.getElementById('ping-value').textContent = '~50';
+    } else {
+      document.getElementById('player-count').textContent = '0';
+      document.getElementById('ping-value').textContent = '--';
+    }
+  } catch(e) {
+    document.getElementById('player-count').textContent = '0';
+    document.getElementById('ping-value').textContent = '--';
+  }
+}
+
+updateActiveAccountUI();
+
+if (state.activeAccount) {
+  showPage('dashboard');
+  log('Hoş geldin geri!', 'success');
+} else {
+  showPage('login');
+}
+
+updateServerStatus();
+setInterval(updateServerStatus, 30000);
+</script>
+</body>
+</html>
