@@ -151,6 +151,95 @@ async function ensureJava(onProgress, onLog) {
   return javaPath
 }
 
+// === MC OPTIONS (TÜRKÇE + OPTİMİZE) ===
+function ensureMinecraftOptions(mcRoot, onLog) {
+  try {
+    const optionsPath = path.join(mcRoot, 'options.txt')
+    
+    // Default Türkçe ve optimize ayarlar
+    const defaults = {
+      'lang': 'tr_tr',
+      'forceUnicodeFont': '0',
+      'autoJump': 'false',
+      'fancyGraphics': 'true',
+      'tutorialStep': 'none',
+      'joinedFirstServer': 'true',
+      'narrator': '0',
+      'soundCategory_master': '1.0',
+      'fov': '0.0',
+      'gamma': '1.0'
+    }
+    
+    let existingLines = []
+    let existingKeys = new Set()
+    
+    if (fs.existsSync(optionsPath)) {
+      const content = fs.readFileSync(optionsPath, 'utf8')
+      existingLines = content.split(/\r?\n/).filter(line => line.trim())
+      existingLines.forEach(line => {
+        const idx = line.indexOf(':')
+        if (idx > 0) existingKeys.add(line.substring(0, idx))
+      })
+    }
+    
+    // Eksik defaults'ları ekle (mevcut ayarları override etme)
+    for (const [key, value] of Object.entries(defaults)) {
+      if (!existingKeys.has(key)) {
+        existingLines.push(`${key}:${value}`)
+      }
+    }
+    
+    // İlk açılışta lang:tr_tr garantili olsun (override)
+    if (!fs.existsSync(optionsPath)) {
+      // Yeni dosya, lang kesinlikle tr_tr olsun
+    } else {
+      // Mevcut dosya varsa lang ayarını güncelle
+      existingLines = existingLines.map(line => {
+        if (line.startsWith('lang:')) return 'lang:tr_tr'
+        if (line.startsWith('tutorialStep:')) return 'tutorialStep:none'
+        if (line.startsWith('joinedFirstServer:')) return 'joinedFirstServer:true'
+        return line
+      })
+    }
+    
+    fs.mkdirSync(mcRoot, { recursive: true })
+    fs.writeFileSync(optionsPath, existingLines.join('\n') + '\n', 'utf8')
+    onLog && onLog('🇹🇷 Türkçe dil ayarı uygulandı')
+  } catch (e) {
+    onLog && onLog('options.txt hatası: ' + e.message)
+  }
+}
+
+// servers.dat - sunucu listesine CraftMix ekle (NBT format)
+function ensureServerInList(mcRoot, onLog) {
+  try {
+    const serversPath = path.join(mcRoot, 'servers.dat')
+    
+    // Eğer zaten varsa dokunma (oyuncu kendi serverlerini eklemiş olabilir)
+    if (fs.existsSync(serversPath)) return
+    
+    // NBT formatında binary dosya - manuel olarak hazırlanmış
+    // Bu, CraftMix Skyblock'u listeye ekleyen NBT dosyası
+    const buf = Buffer.from([
+      0x0a, 0x00, 0x00,                                                       // Compound (root)
+      0x09, 0x00, 0x07, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x73,             // List "servers"
+      0x0a, 0x00, 0x00, 0x00, 0x01,                                           // 1 compound
+      0x08, 0x00, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x00, 0x12,                   // String "name", length 18
+      0x43, 0x72, 0x61, 0x66, 0x74, 0x4d, 0x69, 0x78, 0x20, 0x53, 0x6b, 0x79, 0x62, 0x6c, 0x6f, 0x63, 0x6b, 0x21, // "CraftMix Skyblock!"
+      0x08, 0x00, 0x02, 0x69, 0x70, 0x00, 0x11,                               // String "ip", length 17
+      0x70, 0x6c, 0x61, 0x79, 0x2e, 0x63, 0x72, 0x61, 0x66, 0x74, 0x6d, 0x69, 0x78, 0x2e, 0x6e, 0x65, 0x74, // "play.craftmix.net"
+      0x00,                                                                   // End of compound
+      0x00                                                                    // End of root
+    ])
+    
+    fs.mkdirSync(mcRoot, { recursive: true })
+    fs.writeFileSync(serversPath, buf)
+    onLog && onLog('📋 CraftMix sunucu listeye eklendi')
+  } catch (e) {
+    onLog && onLog('servers.dat hatası: ' + e.message)
+  }
+}
+
 // === ELECTRON ===
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -190,11 +279,17 @@ ipcMain.handle('launch-minecraft', async (event, opts) => {
     
     mainWindow.webContents.send('mc-log', { type: 'success', msg: '✓ Java hazır, oyun başlatılıyor...' })
     
+    const mcRoot = path.join(os.homedir(), '.craftmix')
+    
+    // Türkçe dil + sunucu listeye ekle
+    ensureMinecraftOptions(mcRoot, (msg) => mainWindow.webContents.send('mc-log', { type: 'info', msg: msg }))
+    ensureServerInList(mcRoot, (msg) => mainWindow.webContents.send('mc-log', { type: 'info', msg: msg }))
+    
     const launcher = new Client()
     
     const launchOpts = {
       authorization: Authenticator.getAuth(opts.username),
-      root: path.join(os.homedir(), '.craftmix'),
+      root: mcRoot,
       version: {
         number: '1.21.8',
         type: 'release'
